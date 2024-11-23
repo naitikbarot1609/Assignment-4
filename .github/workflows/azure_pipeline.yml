@@ -1,0 +1,45 @@
+trigger:
+  - main
+
+variables:
+  AZURE_SQL_SERVER: "<naitik1609.mysql.database.azure.com>.database.windows.net" # Replace with your SQL Server
+  DATABASE_NAME: "<db1>" # Replace with your database name
+  SQL_ADMIN: "<rootdb>" # Replace with your admin username
+  SQL_PASSWORD: "$(qwerty@1234)" # Securely stored in Azure DevOps
+
+stages:
+  - stage: DeployScripts
+    displayName: "Deploy SQL Scripts"
+    jobs:
+      - job: DeployDatabase
+        displayName: "Deploy Database Scripts"
+        steps:
+          # Step 1: Deploy create_table.sql
+          - task: AzureCLI@2
+            displayName: "Run create_table.sql"
+            inputs:
+              azureSubscription: "<naitik1609.mysql.database.azure.com>"
+              scriptType: "bash"
+              scriptLocation: "inlineScript"
+              inlineScript: |
+                sqlcmd -S $(AZURE_SQL_SERVER) -d $(DATABASE_NAME) -U $(SQL_ADMIN) -P $(SQL_PASSWORD) -i create_table.sql
+
+          # Step 2: Deploy update_table.sql
+          - task: AzureCLI@2
+            displayName: "Run update_table.sql"
+            inputs:
+              azureSubscription: "<naitik1609.mysql.database.azure.com>"
+              scriptType: "bash"
+              scriptLocation: "inlineScript"
+              inlineScript: |
+                sqlcmd -S $(AZURE_SQL_SERVER) -d $(DATABASE_NAME) -U $(SQL_ADMIN) -P $(SQL_PASSWORD) -i update_table.sql
+
+          # Step 3: Validate the schema update
+          - task: AzureCLI@2
+            displayName: "Validate Schema Update"
+            inputs:
+              azureSubscription: "<your-service-connection-name>"
+              scriptType: "bash"
+              scriptLocation: "inlineScript"
+              inlineScript: |
+                sqlcmd -S $(AZURE_SQL_SERVER) -d $(DATABASE_NAME) -U $(SQL_ADMIN) -P $(SQL_PASSWORD) -Q "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'TestTable' AND COLUMN_NAME = 'Email';"
