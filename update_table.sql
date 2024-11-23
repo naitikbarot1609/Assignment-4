@@ -1,0 +1,1 @@
+ALTER TABLE TestTable ADD Email NVARCHAR(50);
